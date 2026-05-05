@@ -1,0 +1,6 @@
+g++ -g -O -c main.cpp
+g++ -o raytracer -O -I Core -I Cameras -I Lights -I Materials -I Objects */*.cpp main.cpp -lm
+
+g++ -O -c main.cpp -o main.o -I Cameras -I Core -I Lights -I Materials -I Objects
+
+g++ -O -o tracer main.o Cameras/full_camera.o Cameras/simple_camera.o Core/framebuffer.o Core/scene.o Lights/directional_light.o Materials/compound_material.o Materials/global_material.o Materials/phong_material.o Materials/falsecolour_material.o Objects/polymesh_object.o Objects/sphere_object.o -lm
