@@ -109,38 +109,44 @@ PolyMesh::PolyMesh(const char* file, bool smooth)
                     break;
                 }
                 // try to parse faces.
-                int values[8];
-                int c;
-                int np,lp;
-                lp = line.find(" ") + 1;
-                for (c = 0;;)
-                {
-                    if ((line[lp] < '0') || (line[lp] >'9')) // not a valid number, so stop.
+                try {
+                    // 0: f, 1-7: 
+                    int values[100];
+                    int c;
+                    int np,lp;
+                    lp = line.find(" ") + 1;
+                    for (c = 0;;)
                     {
-                        break;
+                        if ((line[lp] < '0') || (line[lp] >'9')) // not a valid number, so stop.
+                        {
+                            break;
+                        }
+                        values[c] = strtoint(line.substr(lp)); // convert to int
+                        c += 1;
+
+                        np = line.find(" ", lp); // look for the next space.
+                        if (np == std::string::npos) // end of string
+                        {
+                            break;
+                        }
+                        lp = np + 1;
                     }
-                    values[c] = strtoint(line.substr(lp)); // convert to int
-                    c += 1;
 
-                    np = line.find(" ", lp); // look for the next space.
-                    if (np == std::string::npos) // end of string
-                    {
-                        break;
-                    }
-                    lp = np + 1;
-                }
-
-                triangle[triangle_count][0] = values[0]-1;
-                triangle[triangle_count][1] = values[1]-1;
-                triangle[triangle_count][2] = values[2]-1;
-                triangle_count += 1;
-
-                if (c > 3)
-                {
-                    triangle[triangle_count][0] = values[2]-1;
-                    triangle[triangle_count][1] = values[3]-1;
-                    triangle[triangle_count][2] = values[0]-1;
+                    triangle[triangle_count][0] = values[0]-1;
+                    triangle[triangle_count][1] = values[1]-1;
+                    triangle[triangle_count][2] = values[2]-1;
                     triangle_count += 1;
+
+                    for (int k = 3; k < 60; k++) {
+                        if (c > k) {
+                            triangle[triangle_count][0] = values[k-1]-1;
+                            triangle[triangle_count][1] = values[k]-1;
+                            triangle[triangle_count][2] = values[0]-1;
+                            triangle_count += 1;
+                        }
+                    }
+                } catch (...) {
+                    cerr << "Malformed face line:" << line << endl;
                 }
 
                 break;
@@ -396,7 +402,7 @@ void PolyMesh::add_contours() {
         }
     }
 
-    cout << contour_count << "\n";
+    //cout << contour_count << "\n";
 }
 
 float shortest_distance(Vertex hit_position, Ray contour) {
@@ -409,6 +415,12 @@ float shortest_distance(Vertex hit_position, Ray contour) {
     //should get the shortest x-y axis distance, rather than the full xyz distance
     //float shortestdist = (raycoord - hit.position).length();
     float shortest2ddist = (raycoord - hit_pos_2d).length();
+
+    //3d version
+    /* float raylambda3d = ((hit_position.dot(contour.direction)) - (contour.direction.dot(contour.position))) / contour.direction.dot(contour.direction);
+    Vertex raycoord3d = contour.position + (raylambda3d * contour.direction);
+
+    float shortest3ddist = (raycoord3d - hit_position).length(); */
 
     return shortest2ddist;
 }
@@ -434,10 +446,13 @@ bool find_perm(array<int, 3> item, vector<array<int, 3>> permutations) {
     return false;
 }
 
-void PolyMesh::recursive_face_traversal(int ind0, int ind1, int ind2, Vertex hit_position, Vector hit_normal, vector<array<int, 3>> &perms_seen, int &towards_camera, vector<float> &distances, bool &contour_found, int depth) {
-    if (depth < 2) {
+void PolyMesh::recursive_face_traversal(int ind0, int ind1, int ind2, Vertex hit_position, Vector hit_normal, vector<array<int, 3>> &perms_seen, int &towards_camera, int &away_camera, vector<float> &distances, bool &contour_found, int &contour_count, int depth, int &depth_of_contour) {
+    if (depth < 6) {
+        //what if it doesnt have any neighboring planes?
+        int no_adjacent = 0;
         for (auto const& [indt, othernorm] : triangle_face_normals[ind0][ind1]) {
             //check that ind0, ind1, indt in the permutation
+            no_adjacent += 1;
             array<int, 3> perm = {ind0, ind1, indt};
             //if the permutation is not already seen
             if (!(find_perm(perm, perms_seen))) {
@@ -452,14 +467,23 @@ void PolyMesh::recursive_face_traversal(int ind0, int ind1, int ind2, Vertex hit
                 //othernorm = triangle_face_normals[perm0][perm1][indt]
                 int camera_count = count_towards_camera(othernorm, triangle_face_normals[ind0][ind1][ind2], hit_normal);
                 towards_camera += camera_count;
+                away_camera += 2 - camera_count;
                 if (camera_count == 1) {
                     distances.push_back(dist);
                     contour_found = true;
+                    contour_count += 1;
+                    if (depth_of_contour == 0) {
+                        depth_of_contour = depth;
+                    }
                 }
                 //call functions to continue the recursion
-                recursive_face_traversal(ind0, indt, ind1, hit_position, hit_normal, perms_seen, towards_camera, distances, contour_found, depth + 1);
-                recursive_face_traversal(ind1, indt, ind0, hit_position, hit_normal, perms_seen, towards_camera, distances, contour_found, depth + 1);
+                recursive_face_traversal(ind0, indt, ind1, hit_position, hit_normal, perms_seen, towards_camera, away_camera, distances, contour_found, contour_count, depth + 1, depth_of_contour);
+                recursive_face_traversal(ind1, indt, ind0, hit_position, hit_normal, perms_seen, towards_camera, away_camera, distances, contour_found, contour_count, depth + 1, depth_of_contour);
             }
+        }
+        if (no_adjacent < 3) {
+            contour_found = true;
+            contour_count += 1;
         }
     } else {
         return;
@@ -470,7 +494,7 @@ bool PolyMesh::check_for_contour(Vertex hit_position, Ray hit_ray, int tri_index
     Vector hit_normal = hit_ray.direction;
 
     //the size of the margin could depend on how many of the faces are towards the camera, and how many are away?
-    float margin = 3.0f;
+    float margin = 0.025f;
 
     int i0 = triangle[tri_index][0];
     int i1 = triangle[tri_index][1];
@@ -483,26 +507,45 @@ bool PolyMesh::check_for_contour(Vertex hit_position, Ray hit_ray, int tri_index
     vector<array<int, 3>> permutations_seen = {};
 
     bool contour_found = false;
-
+    int contour_count = 0;
     int towards_camera = 0;
+    int away_camera = 0;
 
     vector<float> contour_distances = {};
 
+    int depth_of_contour = 0; //recursion depth at which the first contour was found
+
     //we are only checking neighbouring contours rather than all
-    //it stands for 'index other'
-    //if any return contour as true then break out of the loop and return 'contour'
     for (auto const& [perm0, perm1, permother] : start_permutations) {
         //start the recursion here
-        recursive_face_traversal(perm0, perm1, permother, hit_position, hit_normal, permutations_seen, towards_camera, contour_distances, contour_found, 0);
+        recursive_face_traversal(perm0, perm1, permother, hit_position, hit_normal, permutations_seen, towards_camera, away_camera, contour_distances, contour_found, contour_count, 0, depth_of_contour);
     }
 
     if (!contour_found) {
         return false;
     }
 
-    //for faces with less neighbouring faces towards the camera, we want to be stricter on the margin, so that there is a thicker border around the whole mesh
+    //cout << towards_camera << " " << away_camera << "\n";
+
+    /* //more faces towards the camera than away
+    if (towards_camera > away_camera + 20) {
+        return false;
+    }
+
+    //if the depth at which the first contour was found is low, but the number of contours found is also low, it may indicate we are not at an edge
+    if (depth_of_contour < 3 && contour_count < 5) {
+        return false;
+    } */
+
+    /* if (depth_of_contour >= 2) {
+        margin = 0.2f;
+    } else if (depth_of_contour == 4) {
+        margin = 0.1f;
+    } */
+
+    //if it took more recursions before finding a contour, we want to be more lenient on the margin, meanwhile if it took less recursions, be stricter on the margin
     for (float dist : contour_distances) {
-        if (dist < margin/towards_camera) {
+        if (dist < margin) {
             return true;
         }
     }

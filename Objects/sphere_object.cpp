@@ -75,6 +75,12 @@ bool Sphere::intersection(Ray ray, Hit &hit)
 	hit.normal = hit.position - center;
 	hit.normal.normalise();
 
+	float ro_length = Vertex(ro.x, ro.y, 0).length();
+
+	if (fabs(radius - ro_length) < 0.1f) {
+		hit.contour = true;
+	}
+
 	if (hit.normal.dot(ray.direction) > 0.0)
 	{
 		hit.normal.negate();
@@ -88,6 +94,14 @@ void Sphere::apply_transform(Transform& transform)
 	transform.apply(center);
 }
 
-void add_contours() {
-	
+bool Sphere::check_for_contour(Vertex hit_position, Ray hit_ray) {
+	Vertex center2d = Vertex(center.x, center.y, 0);
+	Vertex hit_pos_2d = Vertex(hit_position.x, hit_position.y, 0);
+
+	float dist = (center2d - hit_pos_2d).length();
+
+	if (radius - dist < 0.1f) {
+		return true;
+	}
+	return false;
 }

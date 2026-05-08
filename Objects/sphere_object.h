@@ -32,5 +32,5 @@ public:
 	Sphere(Vertex c, float r);
 	bool intersection(Ray ray, Hit &hit);
 	void apply_transform(Transform& trans);
-	void add_contours();
+	bool check_for_contour(Vertex hit_position, Ray hit_ray);
 };

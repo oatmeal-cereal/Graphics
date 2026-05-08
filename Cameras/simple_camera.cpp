@@ -20,6 +20,9 @@
 #include "contour.h"
 #include "hit.h"
 
+#include <thread>
+#include <vector>
+
 SimpleCamera::SimpleCamera()
 {
   fov = 0.5;
@@ -46,14 +49,9 @@ void SimpleCamera::get_ray_pixel(int p_x, int p_y, Ray &p_ray)
 
 }
 
-void SimpleCamera::render(Environment& env, FrameBuffer& fb)
-{
-	width = fb.width;
-	height = fb.height;
-
-	for (int y = 0; y < height; y += 1)
-	{
-		for (int x = 0; x < width; x += 1)
+void SimpleCamera::render_pixel_group(int x_start, int y_start, int x_end, int y_end, Environment &env, FrameBuffer &fb) {
+	for (int y = y_start; y < y_end; y += 1) {
+		for (int x = x_start; x < x_end; x += 1)
 		{
 			//default ray
 			Ray ray;
@@ -70,5 +68,28 @@ void SimpleCamera::render(Environment& env, FrameBuffer& fb)
 		}
 
 		cerr << "#" << flush;
+	}
+};
+
+void SimpleCamera::render(Environment& env, FrameBuffer& fb)
+{
+	width = fb.width;
+	height = fb.height;
+
+	int no_threads = 64;
+
+	vector<thread> all_threads;
+
+	for (int t = 1; t <= no_threads; t++) {
+		/* thread tr([this, &t, &no_threads, &env, &fb]() {
+			SimpleCamera::render_pixel_group(0, (height*(t-1))/no_threads, width, (height*t)/no_threads, env, fb);
+		}); */
+		all_threads.emplace_back(&SimpleCamera::render_pixel_group, this, 0, (height*(t-1))/no_threads, width, (height*t)/no_threads, ref(env), ref(fb));
+	}
+
+	for (auto& tr : all_threads) {
+		if (tr.joinable()) {
+			tr.join();
+		}
 	}
 }

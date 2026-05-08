@@ -100,6 +100,20 @@ float quantise_pixelcolour(float c) {
 	}
 }
 
+/* float quantise_pixelcolour(float c) {
+	if (c < 0.1f) {
+		return 0.2f;
+	} else if (c < 0.25f) {
+		return 0.3f;
+	} else if (c < 0.5f) {
+		return 0.5f;
+	} else if (c < 0.9f) {
+		return 0.7f;
+	} else {
+		return 0.9f;
+	}
+} */
+
 void Scene::raytrace(Ray ray, int recurse, Colour &colour, float &depth)
 {
 	Hit best_hit;

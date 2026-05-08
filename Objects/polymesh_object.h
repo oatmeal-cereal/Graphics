@@ -59,7 +59,7 @@ public:
 	bool intersection(Ray ray, Hit &hit);
 	void apply_transform(Transform& trans);
 
-	void recursive_face_traversal(int ind0, int ind1, int ind2, Vertex hit_position, Vector hit_normal, vector<array<int, 3>> &perms_seen, int &towards_camera, vector<float> &distances, bool &contour_found, int depth);
+	void recursive_face_traversal(int ind0, int ind1, int ind2, Vertex hit_position, Vector hit_normal, vector<array<int, 3>> &perms_seen, int &towards_camera, int &away_camera, vector<float> &distances, bool &contour_found, int &contour_count, int depth, int &depth_of_contour);
 
     PolyMesh(const char *file, bool smooth);
 	~PolyMesh(){}

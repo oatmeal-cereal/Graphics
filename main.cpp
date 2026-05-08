@@ -59,22 +59,29 @@ void build_scene(Scene& scene)
 										0.0f, 0.0f, 0.0f, 1.0f);
 
 	//rotation around the y-axis
-	float alpha = 30.0f;
+	float alpha = 0.0f;
 	Transform * rotation2 = new Transform(cos(alpha), 0.0f, sin(alpha), 0.0f,
 										0.0f, 1.0f, 0.0f, 0.0f,
 										-1.0f * sin(alpha), 0.0f, cos(alpha), 0.0f,
 										0.0f, 0.0f, 0.0f, 1.0f);
 
 	//rotation around the z-axis
-	float phi = 75.0f;
+	float phi = 210.0f;
 	Transform * rotation3 = new Transform(cos(phi), -1.0f * sin(phi), 0.0f, 0.0f,
 										sin(phi), cos(phi), 0.0f, 0.0f,
 										0.0f, 0.0f, 1.0f, 0.0f,
 										0.0f, 0.0f, 0.0f, 1.0f);
 
+	//rotation around the x-axis
+	float beta = 90.0f;
+	Transform * rotation1 = new Transform(1.0f, 0.0f, 0.0f, 0.0f,
+										0.0f, cos(beta), -sin(beta), 0.0f,
+										0.0f, sin(beta), cos(beta), 0.0f,
+										0.0f, 0.0f, 0.0f, 1.0f);
+
 	Transform * translation = new Transform(1.0f, 0.0f, 0.0f, 0.0f,
-										0.0f, 1.0f, 0.0f, -12.0f,
-										0.0f, 0.0f, 1.0f, 50.0f,
+										0.0f, 1.0f, 0.0f, -1.0f,
+										0.0f, 0.0f, 1.0f, 7.0f,
 										0.0f, 0.0f, 0.0f, 1.0f);
 
 	Phong* bp = new Phong(new MaterialColour(0.1f, 0.1f, 0.1f,1.0f), new MaterialColour(0.3f, 0.3f, 0.3f,1.0f), new MaterialColour(0.6f, 0.6f, 0.6f,1.0f), 120.0f);
@@ -86,17 +93,19 @@ void build_scene(Scene& scene)
 	teapot->set_material(bp);
 	scene.add_object(teapot); */
 
-	Phong* flat = new Phong(new MaterialColour(0.1f, 0.1f, 0.1f, 1.0f), new MaterialColour(0.3f, 0.3f, 0.3f, 1.0f), new MaterialColour(0.6f, 0.6f, 0.6f, 1.0f), 5.0f);
+	Phong* flat = new Phong(new MaterialColour(0.2f, 0.2f, 0.2f, 1.0f), new MaterialColour(0.3f, 0.3f, 0.3f, 1.0f), new MaterialColour(0.6f, 0.6f, 0.6f, 1.0f), 5.0f);
+
+	Phong* red = new Phong(new MaterialColour(0.6f, 0.2f, 0.2f, 1.0f), new MaterialColour(0.3f, 0.3f, 0.3f, 1.0f), new MaterialColour(0.6f, 0.6f, 0.6f, 1.0f), 5.0f);
 
 	Phong* black = new Phong(new MaterialColour(0.0f, 0.0f, 0.0f, 1.0f), new MaterialColour(0.0f, 0.0f, 0.0f, 1.0f), new MaterialColour(0.0f, 0.0f, 0.0f, 1.0f), 1.0f);
 
-	PolyMesh* skull = new PolyMesh("skull-med-big.obj", true);
+	PolyMesh* skull = new PolyMesh("flower.obj", true);
 	//skull->apply_transform(*rotation2);
-	skull->apply_transform(*rotation3);
+	//skull->apply_transform(*rotation3);
+	skull->apply_transform(*rotation1);
     skull->apply_transform(*transform);
 	skull->apply_transform(*translation);
-	//skull->add_contours();
-	skull->set_material(flat);
+	skull->set_material(red);
 
 	scene.add_object(skull);
 
@@ -105,11 +114,11 @@ void build_scene(Scene& scene)
 	GlobalMaterial* gm = new GlobalMaterial(&scene, Colour(0.9f,0.9f,0.9f,1.0f), Colour(0.9f,0.9f,0.9f,1.0f), 1.1f);
 	
 	cm->include_material(bp2);
-	cm->include_material(gm);
+	cm->include_material(gm); */
 
-	Sphere* s2 = new Sphere(Vertex(1.25f,0.0f,10.0f),1.0f);
-	s2->set_material(cm);
-	scene.add_object(s2); */
+	/* Sphere* sphere = new Sphere(Vertex(0.0f,0.0f,10.0f),2.0f);
+	sphere->set_material(flat);
+	scene.add_object(sphere); */
 
 	DirectionalLight* dl = new DirectionalLight(Vector(-1.0f, -1.0f, 1.5f), Colour(1.0f, 1.0f, 1.0f, 0.0f));
 
